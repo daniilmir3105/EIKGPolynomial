@@ -18,7 +18,7 @@ The model is a **compressed elementary image** of the Kolmogorov-Gabor polynomia
 From PyPI (after release):
 
 ```bash
-pip install eikgp-regressor
+pip install eikgp-regressor==0.1.1
 ```
 
 From source (editable):
