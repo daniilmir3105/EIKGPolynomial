@@ -114,6 +114,18 @@ print(cv_model.selected_degree_, cv_model.best_score_)
 - Very high `degree` can still be unstable without meaningful scaling/normalization.
 - Quality of fit depends on whether target structure is well-approximated by polynomial-in-latent form.
 
+## Scientific background
+
+This implementation is inspired by the concept of the elementary image of the Kolmogorov-Gabor polynomial proposed in:
+
+Svetunkov S. *Elementary image of the Kolmogorov-Gabor polynomial in economic modeling*. Technoeconomics, 2024, Vol. 3, No. 2 (9), pp. 4–21.
+
+DOI: https://doi.org/10.57809/2024.3.2.9.1
+
+Original Russian title:
+
+Светуньков С. Элементарный образ полинома Колмогорова-Габора в моделировании экономики // Техноэкономика. 2024. Т. 3, № 2 (9). С. 4–21.
+
 ## Development quality checks
 
 ```bash
