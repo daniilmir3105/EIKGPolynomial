@@ -1,3 +1,4 @@
+from math import comb
 from pathlib import Path
 import sys
 
@@ -253,6 +254,7 @@ X_train_scaled
 
 
 from eikg import (
+    CombinatorialPolynomialNetwork,
     DeepPolyNetwork,
     DeepPolyNetworkCV,
     EIKGPolynomialRegressor,
@@ -369,9 +371,44 @@ network_model = DeepPolyNetwork(
 print("\nОбучение DeepPolyNetwork с выбранными CV степенями...")
 network_model.fit(X_train_scaled, y_train)
 
+# Комбинаторная сеть перебирает все сочетания размером от 2 до количества
+# исходных признаков включительно. Для 8 признаков это 247 кандидатов:
+# C(8, 2) + C(8, 3) + ... + C(8, 8).
+min_combination_size = 2
+max_combination_size = n_features
+n_combinatorial_candidates = sum(
+    comb(n_features, size)
+    for size in range(min_combination_size, max_combination_size + 1)
+)
+
+print(
+    "\nПространство поиска CombinatorialPolynomialNetwork: "
+    f"{n_combinatorial_candidates} комбинаций признаков "
+    f"(размеры {min_combination_size}..{max_combination_size})."
+)
+
+combinatorial_model = CombinatorialPolynomialNetwork(
+    top_k=25,
+    min_combination_size=min_combination_size,
+    max_combination_size=max_combination_size,
+    max_candidates=1000,
+    max_degree=n_features,
+    cv=3,
+    regularization="ridge",
+    alpha_ridge=1e-6,
+    fit_intercept=True,
+    scale=True,
+    scale_y=True,
+    normalize_latent=True,
+)
+
+print("\nОбучение CombinatorialPolynomialNetwork по минимальному CV MSE...")
+combinatorial_model.fit(X_train_scaled, y_train)
+
 network_models = {
     "DeepPolyNetwork": network_model,
     "DeepPolyNetworkCV": network_cv_model,
+    "CombinatorialPolynomialNetwork": combinatorial_model,
 }
 
 network_results = []
@@ -381,11 +418,20 @@ for model_name, network_model in network_models.items():
     network_prediction = network_model.predict(X_test_scaled)
 
     network_mse = mean_squared_error(y_test, network_prediction)
+
+    if isinstance(network_model, CombinatorialPolynomialNetwork):
+        degree_description = (
+            f"first={tuple(network_model.selected_degrees_)}; "
+            f"final={network_model.final_degree_}"
+        )
+    elif isinstance(network_model, DeepPolyNetwork):
+        degree_description = network_model.degrees_
+    else:
+        degree_description = network_model.selected_degrees_
+
     network_results.append({
         "model": model_name,
-        "degrees": network_model.degrees_
-        if isinstance(network_model, DeepPolyNetwork)
-        else network_model.selected_degrees_,
+        "degrees": degree_description,
         "MAE": mean_absolute_error(y_test, network_prediction),
         "MAPE": mean_absolute_percentage_error(y_test, network_prediction),
         "MSE": network_mse,
@@ -410,6 +456,27 @@ network_layer_cv_results = pd.DataFrame({
 
 print("\nМинимальный CV MSE на каждом слое DeepPolyNetworkCV:")
 print(network_layer_cv_results)
+
+combinatorial_ranking = pd.DataFrame(combinatorial_model.ranking_)
+ranking_columns = [
+    "rank",
+    "combination",
+    "feature_names",
+    "selected_degree",
+    "cv_mse_mean",
+    "cv_mse_std",
+    "selected",
+]
+
+print("\nTop-K комбинаций CombinatorialPolynomialNetwork по минимальному CV MSE:")
+print(
+    combinatorial_ranking.loc[combinatorial_ranking["selected"], ranking_columns]
+    .reset_index(drop=True)
+)
+print(
+    "Итоговая степень CombinatorialPolynomialNetwork: "
+    f"{combinatorial_model.final_degree_}"
+)
 
 best_polynomial_result = results_df.loc[[best_idx]].copy()
 best_polynomial_result.insert(0, "model", "EIKGPolynomialRegressor")
