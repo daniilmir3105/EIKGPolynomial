@@ -26,6 +26,7 @@ except Exception:  # pragma: no cover - optional dependency
 
 try:
     from sklearn.base import BaseEstimator, RegressorMixin, clone
+    from sklearn.exceptions import NotFittedError
     from sklearn.model_selection import KFold
 except Exception:  # pragma: no cover - optional dependency
 
@@ -42,6 +43,9 @@ except Exception:  # pragma: no cover - optional dependency
 
     class RegressorMixin:  # type: ignore[no-redef]
         """Fallback mixin when sklearn is unavailable."""
+
+    class NotFittedError(RuntimeError):  # type: ignore[no-redef]
+        """Fallback fitted-state error when sklearn is unavailable."""
 
     clone = None
     KFold = None
@@ -76,6 +80,14 @@ def _stable_finite_mean(values: list[float]) -> float:
     if not np.isfinite(result):
         raise FloatingPointError("Cross-validation produced a non-finite mean score.")
     return result
+
+
+def _validate_boolean_parameters(**parameters: Any) -> None:
+    """Reject truthy/falsy stand-ins for public boolean parameters."""
+
+    for name, value in parameters.items():
+        if not isinstance(value, (bool, np.bool_)):
+            raise ValueError(f"{name} must be a boolean, got {value!r}.")
 
 
 class EIKGPolynomialRegressor(RegressorMixin, BaseEstimator):
@@ -151,6 +163,14 @@ class EIKGPolynomialRegressor(RegressorMixin, BaseEstimator):
     def _fit(self, x: Any, y: Any) -> EIKGPolynomialRegressor:
         validate_degree(self.degree)
         validate_floating_dtype(self.dtype)
+        _validate_boolean_parameters(
+            fit_intercept=self.fit_intercept,
+            scale=self.scale,
+            scale_y=self.scale_y,
+            normalize_latent=self.normalize_latent,
+            copy=self.copy,
+            check_input=self.check_input,
+        )
         x_arr, feature_names = validate_x(
             x, dtype=self.dtype, copy=self.copy, check_input=self.check_input
         )
@@ -378,7 +398,7 @@ class EIKGPolynomialRegressor(RegressorMixin, BaseEstimator):
 
     def _check_is_fitted(self) -> None:
         if not getattr(self, "is_fitted_", False):
-            raise RuntimeError("Estimator is not fitted. Call fit(X, y) first.")
+            raise NotFittedError("Estimator is not fitted. Call fit(X, y) first.")
 
     def _clear_fitted_state(self) -> None:
         fitted_attributes = (
@@ -453,6 +473,14 @@ class EIKGPolynomialRegressorCV(RegressorMixin, BaseEstimator):
         if self.scoring not in {"neg_mean_squared_error", "r2"}:
             raise ValueError("scoring must be one of {'neg_mean_squared_error', 'r2'}.")
         validate_floating_dtype(self.dtype)
+        _validate_boolean_parameters(
+            fit_intercept=self.fit_intercept,
+            scale=self.scale,
+            scale_y=self.scale_y,
+            normalize_latent=self.normalize_latent,
+            copy=self.copy,
+            check_input=self.check_input,
+        )
         x_arr, _ = validate_x(x, dtype=self.dtype, copy=self.copy, check_input=self.check_input)
         y_arr = validate_y(y, dtype=self.dtype, copy=self.copy, check_input=self.check_input)
         validate_xy_lengths(x_arr, y_arr)
@@ -580,7 +608,7 @@ class EIKGPolynomialRegressorCV(RegressorMixin, BaseEstimator):
 
     def _check_is_fitted(self) -> None:
         if not getattr(self, "is_fitted_", False):
-            raise RuntimeError("Estimator is not fitted. Call fit(X, y) first.")
+            raise NotFittedError("Estimator is not fitted. Call fit(X, y) first.")
 
     def _clear_fitted_state(self) -> None:
         fitted_attributes = (

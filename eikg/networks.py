@@ -18,7 +18,10 @@ from .regressors import (
     BaseEstimator,
     EIKGPolynomialRegressor,
     EIKGPolynomialRegressorCV,
+    NotFittedError,
     RegressorMixin,
+    _stable_finite_mean,
+    _validate_boolean_parameters,
 )
 from .validation import (
     validate_floating_dtype,
@@ -35,12 +38,6 @@ def _ensure_finite(values: NDArray[np.float64], *, context: str) -> None:
             f"Non-finite values produced while {context}. "
             "Use fewer layers, enable scaling, or reduce the input magnitude."
         )
-
-
-def _validate_boolean_parameters(**parameters: Any) -> None:
-    for name, value in parameters.items():
-        if not isinstance(value, (bool, np.bool_)):
-            raise ValueError(f"{name} must be a boolean, got {value!r}.")
 
 
 def _resolve_layer_degrees(degree: Any, *, n_layers: int) -> tuple[int, ...]:
@@ -423,7 +420,7 @@ class DeepPolyNetwork(RegressorMixin, BaseEstimator):
 
     def _check_is_fitted(self) -> None:
         if not getattr(self, "is_fitted_", False):
-            raise RuntimeError("Estimator is not fitted. Call fit(X, y) first.")
+            raise NotFittedError("Estimator is not fitted. Call fit(X, y) first.")
 
     def _clear_fitted_state(self) -> None:
         fitted_attributes = (
@@ -558,7 +555,7 @@ class DeepPolyNetworkCV(RegressorMixin, BaseEstimator):
                     fold_scores.append(self._score_fold(state.y_validation, prediction))
 
                 all_fold_scores.append(fold_scores)
-                mean_score = float(np.mean(np.asarray(fold_scores, dtype=np.float64)))
+                mean_score = _stable_finite_mean(fold_scores)
                 if not np.isfinite(mean_score):
                     raise FloatingPointError(
                         f"Layer {layer_number}, degree {degree} produced a non-finite "
@@ -810,7 +807,7 @@ class DeepPolyNetworkCV(RegressorMixin, BaseEstimator):
 
     def _check_is_fitted(self) -> None:
         if not getattr(self, "is_fitted_", False):
-            raise RuntimeError("Estimator is not fitted. Call fit(X, y) first.")
+            raise NotFittedError("Estimator is not fitted. Call fit(X, y) first.")
 
     def _clear_fitted_state(self) -> None:
         fitted_attributes = (
@@ -1175,7 +1172,7 @@ class CombinatorialPolynomialNetwork(RegressorMixin, BaseEstimator):
 
     def _check_is_fitted(self) -> None:
         if not getattr(self, "is_fitted_", False):
-            raise RuntimeError("Estimator is not fitted. Call fit(X, y) first.")
+            raise NotFittedError("Estimator is not fitted. Call fit(X, y) first.")
 
     def _clear_fitted_state(self) -> None:
         fitted_attributes = (

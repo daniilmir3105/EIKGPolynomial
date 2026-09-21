@@ -358,8 +358,8 @@ print("\nПодбор степеней DeepPolyNetworkCV по минимальн
 network_cv_model.fit(X_train_scaled, y_train)
 
 network_model = DeepPolyNetwork(
-    n_layers=network_cv_model.n_layers_,
-    degree=network_cv_model.selected_degrees_,
+    n_layers=4,
+    degree=5,
     regularization="ridge",
     alpha_ridge=1e-6,
     fit_intercept=True,

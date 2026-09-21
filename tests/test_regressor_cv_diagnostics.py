@@ -2,7 +2,11 @@ import numpy as np
 import pytest
 
 from eikg.metrics import mean_squared_error
-from eikg.regressors import EIKGPolynomialRegressor, EIKGPolynomialRegressorCV
+from eikg.regressors import (
+    EIKGPolynomialRegressor,
+    EIKGPolynomialRegressorCV,
+    NotFittedError,
+)
 
 
 def make_data(n_samples: int = 47, seed: int = 901):
@@ -84,5 +88,5 @@ def test_cv_refit_replaces_oof_and_failed_refit_clears_diagnostics() -> None:
 
     assert not hasattr(model, "oof_predictions_")
     assert not hasattr(model, "cv_fold_scores_")
-    with pytest.raises(RuntimeError, match="not fitted"):
+    with pytest.raises(NotFittedError, match="not fitted"):
         model.predict(x_second)

@@ -5,6 +5,7 @@ from eikg.regressors import EIKGPolynomialRegressor, EIKGPolynomialRegressorCV
 
 sklearn = pytest.importorskip("sklearn")
 from sklearn.base import clone, is_regressor  # noqa: E402
+from sklearn.exceptions import NotFittedError  # noqa: E402
 from sklearn.model_selection import GridSearchCV  # noqa: E402
 from sklearn.pipeline import Pipeline  # noqa: E402
 from sklearn.preprocessing import StandardScaler  # noqa: E402
@@ -29,6 +30,13 @@ def test_pipeline_compatibility() -> None:
     pipe.fit(x, y)
     pred = pipe.predict(x)
     assert pred.shape == (x.shape[0],)
+
+
+def test_predict_before_fit_raises_sklearn_not_fitted_error() -> None:
+    x, _ = make_data()
+
+    with pytest.raises(NotFittedError, match="not fitted"):
+        EIKGPolynomialRegressor().predict(x)
 
 
 def test_grid_search_compatibility() -> None:

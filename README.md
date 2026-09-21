@@ -13,12 +13,17 @@ The package provides five sklearn-style estimators:
 ### Network naming and migration
 
 `DeepPolyNetwork` and `DeepPolyNetworkCV` are the canonical public names for new code. The
-former names remain available as backward-compatible aliases, so existing imports continue to
-work without behavioral changes:
+former names remain available as aliases, so existing imports continue to resolve:
 
 ```python
 from eikg import PolynomialNetwork, PolynomialNetworkCV
 ```
+
+These aliases provide **import compatibility with the current canonical classes**:
+`PolynomialNetwork is DeepPolyNetwork` and `PolynomialNetworkCV is DeepPolyNetworkCV`. They do
+not promise bit-for-bit behavioral or serialization compatibility with every historical release.
+In particular, the current CV class performs greedy per-layer degree selection; this can differ
+from behavior produced by older implementations under the legacy `PolynomialNetworkCV` name.
 
 Prefer the `DeepPolyNetwork*` names in new applications, examples, type annotations, and saved
 configuration metadata.
@@ -58,11 +63,11 @@ It is not equivalent to direct estimation of the full multivariate polynomial ba
 
 ## Installation
 
-The PyPI distribution is named `eikgp-regressor`, while the Python import package is named
-`eikg`. After version 0.2.0 has been published to PyPI, install it with:
+The PyPI distribution is named `eikgpolynomial`, while the Python import package is named
+`eikg`. Install release 0.2.0 from PyPI with:
 
 ```bash
-python -m pip install eikgp-regressor==0.2.0
+python -m pip install eikgpolynomial==0.2.0
 ```
 
 Then import its estimators from `eikg`:
@@ -70,6 +75,10 @@ Then import its estimators from `eikg`:
 ```python
 from eikg import EIKGPolynomialRegressor
 ```
+
+The installed version is available as `eikg.__version__`. It is read from the
+`eikgpolynomial` distribution metadata and falls back to the source version when importing an
+uninstalled source tree.
 
 Install from source in editable mode:
 
@@ -448,6 +457,11 @@ The default search is pairwise (`r_min = r_max = 2`), so `M = p * (p - 1) / 2`. 
 combinations are opt-in: evaluating every size from 2 through `p` produces exactly
 `2 ** p - p - 1` candidates.
 
+The default `top_k=5` requires at least five candidates. With the default pairwise search this
+means `p >= 4`: two features produce one pair and three features produce three pairs, so the
+unchanged default constructor raises before fitting in those cases. Set `top_k=1` for two
+features or `top_k<=3` for three features, as appropriate for the intended search.
+
 ### Minimal runnable example
 
 ```python
@@ -712,7 +726,7 @@ For `CombinatorialPolynomialNetwork`, the main fitted attributes are:
 
 ## Minimal API
 
-All five estimators follow the standard sklearn-style workflow:
+All five estimators follow the familiar sklearn-style workflow:
 
 ```python
 model.fit(X, y)
@@ -721,6 +735,20 @@ score = model.score(X, y)
 ```
 
 `score(X, y)` returns the coefficient of determination `R^2`.
+
+### Scikit-learn compatibility
+
+The NumPy-only installation supplies lightweight fallbacks for the estimator base classes and
+supports the package's own `fit`, `predict`, `score`, `get_params`, and `set_params` workflow.
+Install `eikgpolynomial[sklearn]` when using scikit-learn itself. With that extra installed, the
+estimators use scikit-learn's `BaseEstimator` and `RegressorMixin`; cloning, ordinary
+`Pipeline`, `GridSearchCV`, and regressor tags are covered by the test suite.
+
+“Sklearn-style” does not mean that every scikit-learn estimator protocol is implemented. The
+estimators accept dense, finite numeric feature matrices and a single numeric target; sparse
+matrices, multi-output targets, and `sample_weight` are not supported. The built-in CV classes
+accept an integer fold count rather than an arbitrary splitter, and the package does not claim
+complete compliance with the full `check_estimator` test matrix.
 
 ## Limitations
 
@@ -732,6 +760,7 @@ score = model.score(X, y)
 * Max-absolute scaling bounds training powers but cannot guarantee safe extrapolation beyond the observed feature range.
 * `DeepPolyNetworkCV` uses greedy layer-wise selection and does not guarantee the globally best degree tuple. Exhaustive selection would evaluate up to `max_degree ** n_layers` configurations.
 * `CombinatorialPolynomialNetwork` can still be expensive with bounded combination sizes: it evaluates `sum(comb(p, r))` candidates, and every candidate runs degree CV.
+* Its default pairwise search and `top_k=5` require at least four input features; reduce `top_k` explicitly for narrower data.
 * Its OOF columns exclude each row from the corresponding fold-model fit but remain post-selection because degree and Top-K decisions use all fold scores.
 * The final layer is trained on OOF predictions but receives predictions from full-data candidate refits at inference, which is the usual stacking train/inference distribution shift.
 * Cross-validation diagnostics are selection-biased; reserve independent data or use nested cross-validation for performance estimation.
@@ -745,5 +774,7 @@ mypy eikg
 pytest
 ```
 
-Maintainers should follow the complete [release checklist](RELEASE.md) for clean builds,
-TestPyPI verification, versioned GitHub Releases, and PyPI Trusted Publishing.
+Maintainers should follow the complete
+[release checklist for version 0.2.0](https://github.com/daniilmir3105/EIKGPolynomial/blob/v0.2.0/RELEASE.md)
+for clean builds, TestPyPI verification, versioned GitHub Releases, and PyPI Trusted Publishing.
+

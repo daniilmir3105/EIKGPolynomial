@@ -9,7 +9,11 @@ from numpy.typing import NDArray
 
 from eikg import CombinatorialPolynomialNetwork
 from eikg.metrics import mean_squared_error
-from eikg.regressors import EIKGPolynomialRegressor, EIKGPolynomialRegressorCV
+from eikg.regressors import (
+    EIKGPolynomialRegressor,
+    EIKGPolynomialRegressorCV,
+    NotFittedError,
+)
 
 LAYER_PARAMETERS: dict[str, Any] = {
     "regularization": "ridge",
@@ -148,9 +152,9 @@ def test_combinatorial_constructor_defaults_and_unfitted_state() -> None:
     assert not hasattr(model, "ranking_")
 
     x, y = make_data(n_samples=12)
-    with pytest.raises(RuntimeError, match="not fitted"):
+    with pytest.raises(NotFittedError, match="not fitted"):
         model.predict(x)
-    with pytest.raises(RuntimeError, match="not fitted"):
+    with pytest.raises(NotFittedError, match="not fitted"):
         model.score(x, y)
 
 
@@ -444,7 +448,7 @@ def test_combinatorial_failed_refit_clears_fitted_state() -> None:
 
     assert not hasattr(model, "ranking_")
     assert not hasattr(model, "final_estimator_")
-    with pytest.raises(RuntimeError, match="not fitted"):
+    with pytest.raises(NotFittedError, match="not fitted"):
         model.predict(x)
 
 

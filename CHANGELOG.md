@@ -6,7 +6,7 @@ The format is based on Keep a Changelog, and the project adheres to Semantic Ver
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-08-17
+## [0.2.0] - 2026-09-21
 
 ### Added
 
@@ -40,9 +40,14 @@ The format is based on Keep a Changelog, and the project adheres to Semantic Ver
 - Release automation for Python 3.10-3.14, built-wheel smoke testing, and tokenless PyPI
   publication through GitHub Actions Trusted Publishing.
 - Source distributions now include the changelog and release guide.
+- A public `eikg.__version__` value backed by installed distribution metadata, with a source-tree
+  fallback when package metadata is unavailable.
 
 ### Changed
 
+- Renamed the PyPI distribution from `eikgp-regressor` to `eikgpolynomial`. The import package
+  remains `eikg`. This release is the first upload of the new name and does not publish the
+  former distribution name.
 - Replaced the Ridge normal-equation solve with a thin-SVD filter to avoid squaring the design
   matrix condition number, avoid a dense penalty identity, and support rank-deficient inputs,
   including `alpha_ridge=0`.
@@ -63,6 +68,9 @@ The format is based on Keep a Changelog, and the project adheres to Semantic Ver
 - Legacy network-CV diagnostics (`selected_degree_`, `cv_scores_`, `cv_fold_scores_`, and
   `best_score_`) remain available and now explicitly describe only the final greedy selection
   step; complete per-layer results are exposed through the new diagnostics.
+- Release documentation now distinguishes import aliases from historical behavioral
+  compatibility, records the supported scikit-learn integration surface, and requires a fresh
+  exact-commit build before publication.
 
 ## [0.1.1] - 2026-05-09
 

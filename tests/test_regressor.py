@@ -1,7 +1,11 @@
 import numpy as np
 import pytest
 
-from eikg.regressors import EIKGPolynomialRegressor
+from eikg.regressors import (
+    EIKGPolynomialRegressor,
+    EIKGPolynomialRegressorCV,
+    NotFittedError,
+)
 
 
 def make_data(n: int = 120, seed: int = 7):
@@ -36,7 +40,7 @@ def test_fit_predict_dataframe() -> None:
 def test_predict_before_fit_raises() -> None:
     x, _ = make_data()
     model = EIKGPolynomialRegressor()
-    with pytest.raises(RuntimeError, match="not fitted"):
+    with pytest.raises(NotFittedError, match="not fitted"):
         model.predict(x)
 
 
@@ -102,6 +106,32 @@ def test_ridge_rejects_invalid_alpha(alpha_ridge: object) -> None:
         ).fit(x, y)
 
 
+@pytest.mark.parametrize(
+    "parameter",
+    [
+        "fit_intercept",
+        "scale",
+        "scale_y",
+        "normalize_latent",
+        "copy",
+        "check_input",
+    ],
+)
+@pytest.mark.parametrize(
+    "estimator_class",
+    [EIKGPolynomialRegressor, EIKGPolynomialRegressorCV],
+)
+def test_regressors_reject_non_boolean_parameters(
+    parameter: str,
+    estimator_class: type[EIKGPolynomialRegressor] | type[EIKGPolynomialRegressorCV],
+) -> None:
+    x, y = make_data(n=20)
+    estimator = estimator_class(**{parameter: "False"})
+
+    with pytest.raises(ValueError, match=parameter):
+        estimator.fit(x, y)
+
+
 def test_reproducible_results() -> None:
     x, y = make_data()
     m1 = EIKGPolynomialRegressor(degree=3).fit(x, y)
@@ -120,7 +150,7 @@ def test_failed_refit_does_not_leave_mixed_fitted_state() -> None:
         model.fit(10.0 * x, y)
 
     assert not getattr(model, "is_fitted_", False)
-    with pytest.raises(RuntimeError, match="not fitted"):
+    with pytest.raises(NotFittedError, match="not fitted"):
         model.predict(x)
 
 

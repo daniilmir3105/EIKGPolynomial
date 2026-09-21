@@ -3,7 +3,7 @@ requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "eikgp-regressor"
+name = "eikgpolynomial"
 version = "0.2.0"
 description = "Numerically stable EIKG polynomial regressors and networks"
 readme = "README.md"
@@ -45,6 +45,7 @@ dev = [
   "scipy>=1.10",
   "build>=1.2",
   "twine>=5.0",
+  "readme-renderer[md]>=44.0",
   "ruff>=0.6",
   "mypy>=1.10",
   "pre-commit>=3.7",

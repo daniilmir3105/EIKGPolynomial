@@ -14,7 +14,7 @@ from eikg import (
     PolynomialNetworkCV,
 )
 from eikg.metrics import mean_squared_error, r2_score
-from eikg.regressors import EIKGPolynomialRegressor
+from eikg.regressors import EIKGPolynomialRegressor, NotFittedError
 
 
 def make_data(
@@ -293,9 +293,9 @@ def test_network_unfitted_predict_and_score_raise() -> None:
     x, y = make_data(n_samples=12)
     model = DeepPolyNetwork()
 
-    with pytest.raises(RuntimeError, match="not fitted"):
+    with pytest.raises(NotFittedError, match="not fitted"):
         model.predict(x)
-    with pytest.raises(RuntimeError, match="not fitted"):
+    with pytest.raises(NotFittedError, match="not fitted"):
         model.score(x, y)
 
 
@@ -494,6 +494,28 @@ def test_network_cv_matches_manual_greedy_prefix_cross_validation() -> None:
     assert tuple(model.estimator_.degrees_) == expected_degrees
     assert len(model.estimator_.layers_) == model.n_layers
     assert np.isfinite(model.predict(x)).all()
+
+
+def test_network_cv_averages_large_finite_fold_scores_without_overflow(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    x, y = make_data(n_samples=18, seed=52)
+    huge_finite_score = -np.finfo(np.float64).max / 2.0
+
+    def constant_score(
+        self: DeepPolyNetworkCV,
+        y_true: NDArray[np.float64],
+        prediction: NDArray[np.float64],
+    ) -> float:
+        del self, y_true, prediction
+        return float(huge_finite_score)
+
+    monkeypatch.setattr(DeepPolyNetworkCV, "_score_fold", constant_score)
+    model = DeepPolyNetworkCV(n_layers=1, max_degree=1, cv=3).fit(x, y)
+
+    assert np.isfinite(model.best_score_)
+    assert model.best_score_ == huge_finite_score
+    assert model.layer_cv_scores_ == [[huge_finite_score]]
 
 
 @pytest.mark.parametrize(
