@@ -765,6 +765,7 @@ complete compliance with the full `check_estimator` test matrix.
 * The final layer is trained on OOF predictions but receives predictions from full-data candidate refits at inference, which is the usual stacking train/inference distribution shift.
 * Cross-validation diagnostics are selection-biased; reserve independent data or use nested cross-validation for performance estimation.
 * Built-in K-fold selection is not a replacement for a time-series, grouped, or otherwise domain-specific validation design.
+<<<<<<< HEAD
 
 ## Development checks
 
@@ -778,3 +779,5 @@ Maintainers should follow the complete
 [release checklist for version 0.2.0](https://github.com/daniilmir3105/EIKGPolynomial/blob/v0.2.0/RELEASE.md)
 for clean builds, TestPyPI verification, versioned GitHub Releases, and PyPI Trusted Publishing.
 
+=======
+>>>>>>> f37a927f0dafb59b45195714175d1bc3dff1456b
