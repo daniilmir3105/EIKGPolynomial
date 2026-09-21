@@ -736,14 +736,3 @@ score = model.score(X, y)
 * The final layer is trained on OOF predictions but receives predictions from full-data candidate refits at inference, which is the usual stacking train/inference distribution shift.
 * Cross-validation diagnostics are selection-biased; reserve independent data or use nested cross-validation for performance estimation.
 * Built-in K-fold selection is not a replacement for a time-series, grouped, or otherwise domain-specific validation design.
-
-## Development checks
-
-```bash
-ruff check .
-mypy eikg
-pytest
-```
-
-Maintainers should follow the complete [release checklist](RELEASE.md) for clean builds,
-TestPyPI verification, versioned GitHub Releases, and PyPI Trusted Publishing.
