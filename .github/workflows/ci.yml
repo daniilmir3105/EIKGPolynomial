@@ -41,9 +41,13 @@ jobs:
 
       - name: Lint
         run: python -m ruff check .
-
+        
       - name: Type check
-        run: python -m mypy eikg
+        if: ${{ matrix.python-version == '3.12' }}
+        run: |
+          python -m venv "${RUNNER_TEMP}/eikg-typecheck"
+          "${RUNNER_TEMP}/eikg-typecheck/bin/python" -m pip install "mypy==2.3.1" "numpy==2.3.5"
+          "${RUNNER_TEMP}/eikg-typecheck/bin/python" -m mypy --no-incremental eikg
 
       - name: Test
         run: python -m pytest
